@@ -1,0 +1,37 @@
+_target_: src.models.base_module.BaseModule
+net:
+  _target_: src.models.res_net_module.Res_Net
+  classes: ['NRG', 'RG']
+loss_fn:
+  _target_: torch.nn.CrossEntropyLoss
+optimizer:
+  _target_: torch.optim.Adam
+  _partial_: true
+  lr: 1.0e-3
+
+
+accuracy_metric: sklearn.metrics.accuracy_score
+precision_metric: 
+  _target_: sklearn.metrics.precision_score
+  zero_division: 0.0
+recall_metric: 
+  _target_: sklearn.metrics.recall_score
+  zero_division: 0.0
+f1_metric: 
+  _target_: sklearn.metrics.f1_score
+  zero_division: 0.0
+
+scheduler:
+  _target_: torch.optim.lr_scheduler.ReduceLROnPlateau
+  _partial_: true
+  factor: 0.3
+  patience: 5
+
+
+# print(batch_data["image"].shape) # torch.Size([4, 1, 128, 128, 128]) # if batch_size=4
+# print(batch_data["label"].shape) # torch.Size([4, 1, 128, 128, 128])
+# in_channel is 1 ota since data ma euta batch and euta channel xa
+# classes = background lagayera 5 ota xa
+
+
+# CUDA_VISIBLE_DEVICES=1 python src/train.py experiment=unet.yaml experiment_name=unet_model_training
