@@ -1,0 +1,8 @@
+_target_: src.data.glaucoma_eyepacs_airogs.GlaucomaEyepacsModule
+# data_dir: ${paths.data_dir}
+batch_size: 4 # Needs to be divisible by the number of devices (e.g., if in a distributed setup)
+num_workers: 4
+pin_memory: False
+root_dir: /mnt/Enterprise2/shirshak/GLAUCOMA_DATASET_EYEPACS_AIROGS_ZENODO/preprocessed_separated_train_test_val/
+classes: ['NRG', 'RG']
+# this is the out_channels and should be same as unet_yaml file
