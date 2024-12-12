@@ -1,0 +1,35 @@
+# @package _global_
+
+# to execute this experiment run:
+# python train.py experiment=example
+
+defaults:
+  - override /data: glaucoma_eyepacs_airogs
+  - override /model: efficient_net
+  - override /callbacks: default
+  - override /trainer: default
+
+# all parameters below will be merged with parameters from default configurations set above
+# this allows you to overwrite only specified parameters
+
+tags: ["glaucoma_eyepacs_airogs", "efficient_net"]
+experiment_name: glaucoma_eyepacs_airogs_efficient_experiment
+
+seed: 12345
+
+trainer:
+  min_epochs: 10
+  max_epochs: 10
+  gradient_clip_val: 0.5
+  accelerator: gpu
+
+logger:
+  wandb:
+    project: glaucoma_eyepacs_airogs_efficient_project
+    tags: ${tags}
+    group: ${experiment_name}
+
+
+
+# TO RUN THE MODEL AGAIN 
+# python src/train.py experiment=unet.yaml experiment_name=unet_model_training ckpt_path="/home/shirshak/lightning-hydra-template/logs/train/runs/unet_model_training/checkpoints/last.ckpt"
