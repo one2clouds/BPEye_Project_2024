@@ -74,23 +74,27 @@ class BaseModule(LightningModule):
         # print(y.unique()) # tensor([0., 1., 2., 3.])
 
         logits = self.forward(x, classes)
-        softmax_logits = nn.Softmax(dim=1)(logits)
 
         # print(softmax_logits.max()) #tensor(0.9980, device='cuda:0')
         # print(softmax_logits.min()) #tensor(3.7885e-07, device='cuda:0')
         # print(softmax_logits.shape) #torch.Size([4, 5, 128, 128, 128])
         # print(y.shape) # torch.Size([4, 1, 128, 128, 128])
 
-        loss = self.loss_fn(softmax_logits, y)
-        y_pred = torch.argmax(softmax_logits, dim=1)
+        loss = self.loss_fn(logits, y)
+
+        # print(sigmoid_logits)
+        # print(y)
+
+        sigmoid_logits = nn.Sigmoid()(logits)
+        y_pred = torch.argmax(sigmoid_logits, dim=1)
 
         # print(y_pred) # tensor([1, 1, 1, 1], device='cuda:0')
         # print(y) # tensor([1, 1, 1, 1], device='cuda:0')
 
         accuracy = accuracy_score(y.cpu().numpy(), y_pred.cpu().numpy())
-        precision = precision_score(y.cpu().numpy(), y_pred.cpu().numpy())
-        recall = recall_score(y.cpu().numpy(), y_pred.cpu().numpy())
-        f1 = f1_score(y.cpu().numpy(), y_pred.cpu().numpy())
+        precision = precision_score(y.cpu().numpy(), y_pred.cpu().numpy(), average='binary', zero_division=0.0)
+        recall = recall_score(y.cpu().numpy(), y_pred.cpu().numpy(), average='binary', zero_division=0.0)
+        f1 = f1_score(y.cpu().numpy(), y_pred.cpu().numpy(), average='binary', zero_division=0.0)
 
         return loss, y, y_pred, x, [accuracy, precision, recall, f1]
 
@@ -98,7 +102,7 @@ class BaseModule(LightningModule):
         loss, targets, preds,  x, metric_list = self.model_step(batch)
         
         self.train_loss(loss)
-        self.log("train/loss", self.train_loss, on_step=False, on_epoch=True, prog_bar=True)
+        self.log("train/loss", self.train_loss, on_step=True, on_epoch=True, prog_bar=True)
         self.log_dict({"train/acc" : metric_list[0], "train/precision" : metric_list[1], "train/recall" : metric_list[2], "train/f1" : metric_list[3]})
 
         # if isinstance(self.logger, WandbLogger):
@@ -117,7 +121,7 @@ class BaseModule(LightningModule):
 
         # update and log metrics
         self.val_loss(loss)
-        self.log("val/loss", self.val_loss.compute().item(), on_step=False, on_epoch=True, prog_bar=True)
+        self.log("val/loss", self.val_loss.compute().item(), on_step=True, on_epoch=True, prog_bar=True)
         self.log_dict({"val/acc" : metric_list[0], "val/precision" : metric_list[1], "val/recall" : metric_list[2], "val/f1" : metric_list[3]})
 
         # if isinstance(self.logger, WandbLogger):
