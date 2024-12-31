@@ -6,14 +6,14 @@ from torch.utils.data import Dataset, DataLoader
 import pathlib
 import torch.optim as optim
 from tqdm import tqdm
-from torchvision.models import EfficientNet_B4_Weights
+from torchvision.models import EfficientNet_B0_Weights
 
 
 
 class Efficient_Net(nn.Module):
     def __init__(self, classes):
         super().__init__()
-        self.model = torchvision.models.efficientnet_b4(weights=EfficientNet_B4_Weights.DEFAULT)
+        self.model = torchvision.models.efficientnet_b0(weights=EfficientNet_B0_Weights.DEFAULT)
         self.model.classifier[1] = nn.Linear(self.model.classifier[1].in_features, len(classes))
         
     def forward(self, x:torch.Tensor, num_classes) -> torch.Tensor:

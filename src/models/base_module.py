@@ -41,6 +41,11 @@ class BaseModule(LightningModule):
 
         self.val_loss_min = MinMetric()
 
+        self.accuracy = accuracy_score
+        self.precision = precision_score
+        self.recall = recall_score
+        self.f1 = f1_score
+
 
     def forward(self, x, classes):
         return self.net(x, num_classes=len(classes))
@@ -52,108 +57,88 @@ class BaseModule(LightningModule):
         self.val_loss.reset()
 
     def model_step(self, batch: Tuple[torch.Tensor, torch.Tensor]) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
-        # print(batch[0])
-        # print("-"*80)
-        # print(batch[1])
-        # print("-"*80)
-        # print(batch[2])
-        # print("-"*80)
         train_path = os.path.join(self.root_dir, "train")
         root=pathlib.Path(train_path)
         classes=sorted([j.name.split('/')[-1] for j in root.iterdir()])
 
         x, y = batch[0], batch[1]
-        # print(x)
-        # print(y) # tensor([1, 1, 1, 1], device='cuda:0')
-
-
-        # print(x.shape) # torch.Size([4, 1, 128, 128, 128])
-        # print(y.shape) # torch.Size([4, 1, 128, 128, 128])
-        # print(x.max()) # tensor(9.2463) # because of normalize intensity
-        # print(x.min()) # tensor(-7.0969)
-        # print(y.unique()) # tensor([0., 1., 2., 3.])
-
         logits = self.forward(x, classes)
 
-        # print(softmax_logits.max()) #tensor(0.9980, device='cuda:0')
-        # print(softmax_logits.min()) #tensor(3.7885e-07, device='cuda:0')
-        # print(softmax_logits.shape) #torch.Size([4, 5, 128, 128, 128])
-        # print(y.shape) # torch.Size([4, 1, 128, 128, 128])
+        # print(logits)
+        # print(y)
+        # print(logits)
 
         loss = self.loss_fn(logits, y)
 
         # print(sigmoid_logits)
         # print(y)
 
-        sigmoid_logits = nn.Sigmoid()(logits)
-        y_pred = torch.argmax(sigmoid_logits, dim=1)
+        # sigmoid_logits = nn.Sigmoid()(logits)
+        preds = torch.argmax(logits, dim=1)
 
-        # print(y_pred) # tensor([1, 1, 1, 1], device='cuda:0')
-        # print(y) # tensor([1, 1, 1, 1], device='cuda:0')
+        # print(f"this is preds : {preds}") # tensor([1, 1, 1, 1], device='cuda:0')
+        # print(f"this is y : {y}") # tensor([1, 1, 1, 1], device='cuda:0')
 
-        accuracy = accuracy_score(y.cpu().numpy(), y_pred.cpu().numpy())
-        precision = precision_score(y.cpu().numpy(), y_pred.cpu().numpy(), average='binary', zero_division=0.0)
-        recall = recall_score(y.cpu().numpy(), y_pred.cpu().numpy(), average='binary', zero_division=0.0)
-        f1 = f1_score(y.cpu().numpy(), y_pred.cpu().numpy(), average='binary', zero_division=0.0)
+        accuracy = self.accuracy(y.cpu().numpy(), preds.cpu().numpy())
+        precision = self.precision(y.cpu().numpy(), preds.cpu().numpy(), average='binary', zero_division=0.0)
+        recall = self.recall(y.cpu().numpy(), preds.cpu().numpy(), average='binary', zero_division=0.0)
+        f1 = self.f1(y.cpu().numpy(), preds.cpu().numpy(), average='binary', zero_division=0.0)
 
-        return loss, y, y_pred, x, [accuracy, precision, recall, f1]
+        return loss, preds, y, [accuracy, precision, recall, f1]
 
     def training_step(self, batch: Tuple[torch.Tensor, torch.Tensor]) -> torch.Tensor:
-        loss, targets, preds,  x, metric_list = self.model_step(batch)
-        
-        self.train_loss(loss)
-        self.log("train/loss", self.train_loss, on_step=True, on_epoch=True, prog_bar=True)
-        self.log_dict({"train/acc" : metric_list[0], "train/precision" : metric_list[1], "train/recall" : metric_list[2], "train/f1" : metric_list[3]})
+        loss, preds, y, metric_list = self.model_step(batch)
 
-        # if isinstance(self.logger, WandbLogger):
-        #     a_3d_img_to_tif(original_img, 'original_img.gif')
-        #     self.logger.log_video(key="train/original_img", videos=['original_img.gif'])
-        #     a_3d_img_to_tif(targets_arg, 'target_img.gif', segmentation=True)
-        #     self.logger.log_video(key="train/target_img", videos=['target_img.gif'])
-        #     a_3d_img_to_tif(pred_arg, 'predicted_img.gif', segmentation=True)
-        #     self.logger.log_video(key="train/pred_img", videos=['predicted_img.gif'])
+        self.train_loss(loss)
+
+        print("Training")
+        print(f"this is preds : {preds}") # tensor([1, 1, 1, 1], device='cuda:0')
+        print(f"this is y : {y}") # tensor([1, 1, 1, 1], device='cuda:0')
+        
+        self.log("train/loss", self.train_loss, on_step=False, on_epoch=True, prog_bar=True)
+        self.log("train/acc", metric_list[0], on_step=False, on_epoch=True, prog_bar=True)
+        self.log("train/precision", metric_list[1], on_step=False, on_epoch=True, prog_bar=True)
+        self.log("train/recall", metric_list[2], on_step=False, on_epoch=True, prog_bar=True)
+        self.log("train/f1", metric_list[3], on_step=False, on_epoch=True, prog_bar=True)
 
         # return loss or backpropagation will fail
         return loss
 
-    def validation_step(self, batch: Tuple[torch.Tensor, torch.Tensor], batch_idx: int) -> None:
-        loss, targets, preds,  x, metric_list = self.model_step(batch)
+    def on_train_epoch_end(self) -> None:
+        pass
+        
 
+    def validation_step(self, batch: Tuple[torch.Tensor, torch.Tensor], batch_idx: int) -> None:
+        loss, preds, y, metric_list = self.model_step(batch)
+
+        print("validation")
+        print(f"this is preds : {preds}") # tensor([1, 1, 1, 1], device='cuda:0')
+        print(f"this is y : {y}") # tensor([1, 1, 1, 1], device='cuda:0')
+        
         # update and log metrics
         self.val_loss(loss)
-        self.log("val/loss", self.val_loss.compute().item(), on_step=True, on_epoch=True, prog_bar=True)
-        self.log_dict({"val/acc" : metric_list[0], "val/precision" : metric_list[1], "val/recall" : metric_list[2], "val/f1" : metric_list[3]})
-
-        # if isinstance(self.logger, WandbLogger):
-        #     a_3d_img_to_tif(original_img, 'original_img.gif')
-        #     self.logger.log_video(key="val/original_img", videos=['original_img.gif'])
-        #     a_3d_img_to_tif(targets_arg, 'target_img.gif', segmentation=True)
-        #     self.logger.log_video(key="val/target_img", videos=['target_img.gif'])
-        #     a_3d_img_to_tif(pred_arg, 'predicted_img.gif', segmentation=True)
-        #     self.logger.log_video(key="val/pred_img", videos=['predicted_img.gif'])
+        self.log("val/loss", self.val_loss, on_step=False, on_epoch=True, prog_bar=True)
+        self.log("val/acc", metric_list[0], on_step=False, on_epoch=True, prog_bar=True)
+        self.log("val/precision", metric_list[1], on_step=False, on_epoch=True, prog_bar=True)
+        self.log("val/recall", metric_list[2], on_step=False, on_epoch=True, prog_bar=True)
+        self.log("val/f1", metric_list[3], on_step=False, on_epoch=True, prog_bar=True)
+        return None
 
     def on_validation_epoch_end(self) -> None:
-        loss = self.val_loss.compute() # gives current loss from batch 
-        self.val_loss_min(loss) # logs our loss into the min 
-
-        # self.log("val/loss", self.val_loss_min(loss).item(), sync_dist=True, prog_bar=True) # get the lowest value from the above
-
+        pass
 
     def test_step(self, batch: Tuple[torch.Tensor, torch.Tensor], batch_idx: int) -> None:
-        loss, targets, preds,  x, metric_list = self.model_step(batch)
+        loss, preds, y, metric_list = self.model_step(batch)
 
         # update and log metrics
         self.test_loss(loss)
         self.log("test/loss", self.test_loss, on_step=False, on_epoch=True, prog_bar=True)
-        self.log_dict({"test/acc" : metric_list[0], "test/precision" : metric_list[1], "test/recall" : metric_list[2], "test/f1" : metric_list[3]})
+        self.log("test/acc", metric_list[0], on_step=False, on_epoch=True, prog_bar=True)
+        self.log("test/precision", metric_list[1], on_step=False, on_epoch=True, prog_bar=True)
+        self.log("test/recall", metric_list[2], on_step=False, on_epoch=True, prog_bar=True)
+        self.log("test/f1", metric_list[3], on_step=False, on_epoch=True, prog_bar=True)
 
-        # if isinstance(self.logger, WandbLogger):
-        #     a_3d_img_to_tif(original_img, 'original_img.gif')
-        #     self.logger.log_video(key="test/original_img", videos=['original_img.gif'])
-        #     a_3d_img_to_tif(targets_arg,'target_img.gif', segmentation=True )
-        #     self.logger.log_video(key="test/target_img", videos=['target_img.gif'])
-        #     a_3d_img_to_tif(pred_arg, 'predicted_img.gif', segmentation=True)
-        #     self.logger.log_video(key="test/pred_img", videos=['predicted_img.gif'])
+        self.log_dict({"test/acc" : metric_list[0], "test/precision" : metric_list[1], "test/recall" : metric_list[2], "test/f1" : metric_list[3]})
 
 
     def configure_optimizers(self):
