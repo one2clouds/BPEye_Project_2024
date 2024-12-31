@@ -10,7 +10,7 @@ from lightning.pytorch.loggers import WandbLogger
 from torchvision.transforms import Compose, ToTensor, ToPILImage
 import pathlib
 import os
-from sklearn.metrics import accuracy_score, precision_score, f1_score, recall_score
+from sklearn.metrics import balanced_accuracy_score, precision_score, f1_score, recall_score
 
 
 class BaseModule(LightningModule):
@@ -21,7 +21,7 @@ class BaseModule(LightningModule):
         optimizer: torch.optim.Optimizer,
         root_dir: str,
         scheduler: Optional[torch.optim.lr_scheduler.LinearLR] = None,
-        scheduler_monitor: str = "val/loss",
+        scheduler_monitor: str = "val/f1",
         ) -> None:
         super().__init__()
 
@@ -41,7 +41,7 @@ class BaseModule(LightningModule):
 
         self.val_loss_min = MinMetric()
 
-        self.accuracy = accuracy_score
+        self.accuracy = balanced_accuracy_score
         self.precision = precision_score
         self.recall = recall_score
         self.f1 = f1_score
@@ -80,9 +80,9 @@ class BaseModule(LightningModule):
         # print(f"this is y : {y}") # tensor([1, 1, 1, 1], device='cuda:0')
 
         accuracy = self.accuracy(y.cpu().numpy(), preds.cpu().numpy())
-        precision = self.precision(y.cpu().numpy(), preds.cpu().numpy(), average='binary', zero_division=0.0)
-        recall = self.recall(y.cpu().numpy(), preds.cpu().numpy(), average='binary', zero_division=0.0)
-        f1 = self.f1(y.cpu().numpy(), preds.cpu().numpy(), average='binary', zero_division=0.0)
+        precision = self.precision(y.cpu().numpy(), preds.cpu().numpy(), average='weighted', zero_division=0.0)
+        recall = self.recall(y.cpu().numpy(), preds.cpu().numpy(), average='weighted', zero_division=0.0)
+        f1 = self.f1(y.cpu().numpy(), preds.cpu().numpy(), average='weighted', zero_division=0.0)
 
         return loss, preds, y, [accuracy, precision, recall, f1]
 
@@ -91,9 +91,9 @@ class BaseModule(LightningModule):
 
         self.train_loss(loss)
 
-        print("Training")
-        print(f"this is preds : {preds}") # tensor([1, 1, 1, 1], device='cuda:0')
-        print(f"this is y : {y}") # tensor([1, 1, 1, 1], device='cuda:0')
+        # print("Training")
+        # print(f"this is preds : {preds}") # tensor([1, 1, 1, 1], device='cuda:0')
+        # print(f"this is y : {y}") # tensor([1, 1, 1, 1], device='cuda:0')
         
         self.log("train/loss", self.train_loss, on_step=False, on_epoch=True, prog_bar=True)
         self.log("train/acc", metric_list[0], on_step=False, on_epoch=True, prog_bar=True)
@@ -111,9 +111,9 @@ class BaseModule(LightningModule):
     def validation_step(self, batch: Tuple[torch.Tensor, torch.Tensor], batch_idx: int) -> None:
         loss, preds, y, metric_list = self.model_step(batch)
 
-        print("validation")
-        print(f"this is preds : {preds}") # tensor([1, 1, 1, 1], device='cuda:0')
-        print(f"this is y : {y}") # tensor([1, 1, 1, 1], device='cuda:0')
+        # print("validation")
+        # print(f"this is preds : {preds}") # tensor([1, 1, 1, 1], device='cuda:0')
+        # print(f"this is y : {y}") # tensor([1, 1, 1, 1], device='cuda:0')
         
         # update and log metrics
         self.val_loss(loss)
@@ -137,9 +137,7 @@ class BaseModule(LightningModule):
         self.log("test/precision", metric_list[1], on_step=False, on_epoch=True, prog_bar=True)
         self.log("test/recall", metric_list[2], on_step=False, on_epoch=True, prog_bar=True)
         self.log("test/f1", metric_list[3], on_step=False, on_epoch=True, prog_bar=True)
-
-        self.log_dict({"test/acc" : metric_list[0], "test/precision" : metric_list[1], "test/recall" : metric_list[2], "test/f1" : metric_list[3]})
-
+        return None
 
     def configure_optimizers(self):
         optimizer = self.hparams.optimizer(params=self.parameters())

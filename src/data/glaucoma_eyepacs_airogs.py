@@ -7,6 +7,7 @@ import os
 from torchvision.transforms import transforms
 import torchvision
 import pandas as pd 
+import random
 
 
 
@@ -45,12 +46,11 @@ class BP_Eye_Dataset(Dataset):
 
 
 my_transforms = transforms.Compose([
+    transforms.ToPILImage(), 
     transforms.RandomHorizontalFlip(),
     transforms.ToTensor(), # convert 0-255 to 0-1 and from np to tensors
-    transforms.Normalize(mean=[0.5, 0.5, 0.5], std=[0.5, 0.5, 0.5])
-    # transforms.ToPILImage(), 
-    # transforms.RandomHorizontalFlip(),
-    # transforms.Resize(size=(224,224),antialias=True)
+    transforms.Normalize(mean=[0.5, 0.5, 0.5], std=[0.5, 0.5, 0.5]),
+    transforms.Resize(size=(512,512),antialias=True)
 ])
     
 
@@ -102,12 +102,16 @@ class GlaucomaEyepacsModule(LightningDataModule):
             # print(len(sorted(glob.glob(self.root_dir+"val/NRG/*.jpg")))) # 9817
             # print(len(sorted(glob.glob(self.root_dir+"test/NRG/*.jpg")))) # 9818
 
-            # train_data_paths = sorted(glob.glob(self.root_dir+"train/RG/*.jpg"))[:2] + sorted(glob.glob(self.root_dir+"train/NRG/*.jpg"))[:2] # from train path
-            # val_data_paths = sorted(glob.glob(self.root_dir+"val/RG/*.jpg"))[:2] + sorted(glob.glob(self.root_dir+"val/NRG/*.jpg"))[:2] # from validation path
-            # test_data_paths = sorted(glob.glob(self.root_dir+"test/RG/*.jpg"))[:2] + sorted(glob.glob(self.root_dir+"test/NRG/*.jpg"))[:2] # from test path
+            train_data_paths = sorted(glob.glob(self.root_dir+"train/RG/*.jpg")) + sorted(glob.glob(self.root_dir+"train/NRG/*.jpg"))[:5000] # from train path
+            val_data_paths = sorted(glob.glob(self.root_dir+"val/RG/*.jpg")) + sorted(glob.glob(self.root_dir+"val/NRG/*.jpg"))[:700] # from validation path
+            test_data_paths = sorted(glob.glob(self.root_dir+"test/RG/*.jpg")) + sorted(glob.glob(self.root_dir+"test/NRG/*.jpg"))[:700] # from test path
 
-            
-            
+            # doing shuffling in the val data because, at a batch there can be all negative case, & even if model is ideal, the metrics like precision, recall is 0%
+            # shuffling it now, and will not shuffle it later on during data loading......
+            random.shuffle(train_data_paths)
+            random.shuffle(val_data_paths)
+            random.shuffle(test_data_paths)
+
             # FOR DATA OF DIFFERENT SHAPE, ONLY TAKING SHAPE OF 2000-3000
             # df = pd.read_csv("/home/shirshak/BPEye_Project_2024/zzz_tests/df_v2_H_W_Mean-Intensity_labelsv222.csv")
             # df['Height Range'] = pd.cut(df['height'], bins=[df['height'].min()-1, 1000, 2000, 3000, 4000, df['height'].max()+1], labels=[f"{df['height'].min()}-1000","1000-2000", "2000-3000", f"3000-4000", f"4000-{df['height'].max()}"])
@@ -125,17 +129,17 @@ class GlaucomaEyepacsModule(LightningDataModule):
             # print(val_data_paths)
             # print(test_data_paths)
 
-            # self.data_train = BP_Eye_Dataset(train_data_paths, classes=self.classes, my_transforms=my_transforms)
-            # self.data_val = BP_Eye_Dataset(val_data_paths, classes=self.classes, my_transforms=my_transforms)
-            # self.data_test = BP_Eye_Dataset(test_data_paths, classes=self.classes, my_transforms=my_transforms)
+            self.data_train = BP_Eye_Dataset(train_data_paths, classes=self.classes, my_transforms=my_transforms)
+            self.data_val = BP_Eye_Dataset(val_data_paths, classes=self.classes, my_transforms=my_transforms)
+            self.data_test = BP_Eye_Dataset(test_data_paths, classes=self.classes, my_transforms=my_transforms)
 
-            train_data_paths = os.path.join(self.root_dir+"train/") # from train path
-            val_data_paths = os.path.join(self.root_dir+"validation/") # from validation path
-            test_data_paths = os.path.join(self.root_dir+"test/") # from test path
+            # train_data_paths = os.path.join(self.root_dir+"train/") # from train path
+            # val_data_paths = os.path.join(self.root_dir+"val/") # from validation path
+            # test_data_paths = os.path.join(self.root_dir+"test/") # from test path
 
-            self.data_train = torchvision.datasets.ImageFolder(train_data_paths, transform=my_transforms)
-            self.data_val = torchvision.datasets.ImageFolder(val_data_paths, transform=my_transforms)
-            self.data_test = torchvision.datasets.ImageFolder(test_data_paths, transform=my_transforms)
+            # self.data_train = torchvision.datasets.ImageFolder(train_data_paths, transform=my_transforms)
+            # self.data_val = torchvision.datasets.ImageFolder(val_data_paths, transform=my_transforms)
+            # self.data_test = torchvision.datasets.ImageFolder(test_data_paths, transform=my_transforms)
 
     def train_dataloader(self) -> DataLoader[Any]:
         return DataLoader(
@@ -152,7 +156,7 @@ class GlaucomaEyepacsModule(LightningDataModule):
             batch_size=self.batch_size_per_device,
             num_workers=self.hparams.num_workers,
             pin_memory=self.hparams.pin_memory,
-            shuffle=True,
+            shuffle=False,
         )
 
     def test_dataloader(self) -> DataLoader[Any]:
@@ -161,7 +165,7 @@ class GlaucomaEyepacsModule(LightningDataModule):
             batch_size=self.batch_size_per_device,
             num_workers=self.hparams.num_workers,
             pin_memory=self.hparams.pin_memory,
-            shuffle=True,)
+            shuffle=False,)
 
 if __name__ == "__main__":
     _ = GlaucomaEyepacsModule()
