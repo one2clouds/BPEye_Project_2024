@@ -1,0 +1,7 @@
+_target_: src.data.amd_macula.AMDMaculaModule
+batch_size: 32 
+num_workers: 4
+pin_memory: False
+# root_dir: /mnt/Enterprise2/shirshak/Glaucoma_Dataset_eyepacs_airogs_lightv2/eyepac-light-v2-512-jpg/                        # change it in model file
+root_dir: /mnt/Enterprise2/shirshak/ADAM_AgeRelatedMacularDegeneration/preprocessed_cropped_train_test_val_separated_ADAM/
+classes: ['Non-AMD', 'AMD'] # change it in model file

@@ -1,31 +1,60 @@
 _target_: src.models.base_module.BaseModule
 net:
   _target_: src.models.res_net_module.Res_Net
-  classes: ['NRG', 'RG']
+  # change it in data/eyepacs_airogs.yaml too
+  # classes: ['NRG', 'RG']
+  classes: ['Non-AMD', 'AMD']
+
 loss_fn:
   _target_: torch.nn.CrossEntropyLoss
+
+# loss_fn:
+#   _target_: torchvision.ops.sigmoid_focal_loss
+#   alpha: 0.25
+#   gamma: 2
+#   reduction: mean
+
+# loss_fn:
+#   _target_: monai.losses.FocalLoss
+#   to_onehot_y: true
+
 optimizer:
   _target_: torch.optim.Adam
   _partial_: true
-  lr: 1.0e-3
+  lr: 1.0e-4
 
+# root_dir: /mnt/Enterprise2/shirshak/GLAUCOMA_DATASET_EYEPACS_AIROGS_ZENODO/preprocessed_cropped_separated_train_test_val
+# change root dir from data/eyepacs_airogs.yaml too
+# root_dir: /mnt/Enterprise2/shirshak/Glaucoma_Dataset_eyepacs_airogs_lightv2/eyepac-light-v2-512-jpg/
+root_dir: /mnt/Enterprise2/shirshak/ADAM_AgeRelatedMacularDegeneration/preprocessed_cropped_train_test_val_separated_ADAM/
 
-accuracy_metric: sklearn.metrics.accuracy_score
-precision_metric: 
-  _target_: sklearn.metrics.precision_score
-  zero_division: 0.0
-recall_metric: 
-  _target_: sklearn.metrics.recall_score
-  zero_division: 0.0
-f1_metric: 
-  _target_: sklearn.metrics.f1_score
-  zero_division: 0.0
 
 scheduler:
   _target_: torch.optim.lr_scheduler.ReduceLROnPlateau
   _partial_: true
   factor: 0.3
   patience: 5
+
+
+# The below doesnot work in accuracy_metric case but when we use dice metric from monai then it works passing from yaml file because dice_metric 
+# from monai is stateful and can be instantiated without y_pred & y_true but accuracy_score from sklearn is stateless & cannot be instantiaetd without arguments. 
+
+# accuracy_metric: 
+#   _target_: sklearn.metrics.accuracy_score
+#   normalize: true
+# precision_metric: 
+#   _target_: sklearn.metrics.precision_score
+#   zero_division: 0.0
+#   average: micro
+# recall_metric: 
+#   _target_: sklearn.metrics.recall_score
+#   zero_division: 0.0
+#   average: micro
+# f1_metric: 
+#   _target_: sklearn.metrics.f1_score
+#   zero_division: 0.0
+#   average: micro
+
 
 
 # print(batch_data["image"].shape) # torch.Size([4, 1, 128, 128, 128]) # if batch_size=4

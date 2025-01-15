@@ -5,7 +5,7 @@
 
 defaults:
   - override /data: glaucoma_eyepacs_airogs
-  - override /model: efficient_net
+  - override /model: res_net
   - override /callbacks: default
   - override /trainer: default
   - override /logger: wandb.yaml
@@ -13,8 +13,8 @@ defaults:
 # all parameters below will be merged with parameters from default configurations set above
 # this allows you to overwrite only specified parameters
 
-tags: ["glaucoma_eyepacs_airogs", "efficient_net"]
-experiment_name: glaucoma_eyepacs_airogs_efficient_experiment
+tags: ["glaucoma_eyepacs_airogs", "resnet50"]
+experiment_name: glaucoma_eyepacs_airogs_resnet50_experiment
 
 seed: 12345
 
@@ -26,7 +26,7 @@ trainer:
 
 logger:
   wandb:
-    project: glaucoma_eyepacs_airogs_efficient_project_data_zenodo_raw_data
+    project: glaucoma_eyepacs_airogs_resnet50_project_data_zenodo_raw_data
     tags: ${tags}
     group: ${experiment_name}
 

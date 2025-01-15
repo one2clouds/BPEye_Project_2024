@@ -109,6 +109,13 @@ ENV/
 env.bak/
 venv.bak/
 
+zzz_tests/right_cases/
+zzz_tests/right_cases_odir/
+zzz_tests/wrong_cases/
+zzz_tests/wrong_cases_odir/
+zzz_tests/right_cases_glaucoma_dristi
+zzz_tests/wrong_cases_glaucoma_dristi
+
 # Spyder project settings
 .spyderproject
 .spyproject

@@ -1,0 +1,32 @@
+# @package _global_
+defaults:
+  - override /data: amd_macula
+  - override /model: res_net
+  - override /callbacks: default
+  - override /trainer: default
+  - override /logger: wandb.yaml
+
+# all parameters below will be merged with parameters from default configurations set above
+# this allows you to overwrite only specified parameters
+
+tags: ["amd_macula", "res_net"]
+experiment_name: amd_macula_resnet_experiment
+
+seed: 12345
+
+trainer:
+  min_epochs: 5
+  max_epochs: 100
+  gradient_clip_val: 0.5
+  accelerator: gpu
+
+logger:
+  wandb:
+    project: amd_macula_resnet_project
+    tags: ${tags}
+    group: ${experiment_name}
+
+
+
+# TO RUN THE MODEL AGAIN 
+# python src/train.py experiment=amd_macula ckpt_path="/home/shirshak/lightning-hydra-template/logs/train/runs/unet_model_training/checkpoints/last.ckpt"

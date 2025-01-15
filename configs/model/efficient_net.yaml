@@ -1,10 +1,12 @@
 _target_: src.models.base_module.BaseModule
 net:
   _target_: src.models.efficient_net_module.Efficient_Net
-  classes: ['NRG', 'RG']
+  # change it in data/eyepacs_airogs.yaml too
+  # classes: ['NRG', 'RG'] 
+  classes: ['Non-AMD', 'AMD']
 
-# loss_fn:
-#   _target_: torch.nn.CrossEntropyLoss
+loss_fn:
+  _target_: torch.nn.CrossEntropyLoss
 
 # loss_fn:
 #   _target_: torchvision.ops.sigmoid_focal_loss
@@ -12,18 +14,19 @@ net:
 #   gamma: 2
 #   reduction: mean
 
-loss_fn:
-  _target_: monai.losses.FocalLoss
-  to_onehot_y: true
+# loss_fn:
+#   _target_: monai.losses.FocalLoss
+#   to_onehot_y: true
 
 optimizer:
   _target_: torch.optim.Adam
   _partial_: true
   lr: 1.0e-4
 
-root_dir: /mnt/Enterprise2/shirshak/GLAUCOMA_DATASET_EYEPACS_AIROGS_ZENODO/preprocessed_cropped_separated_train_test_val
+# root_dir: /mnt/Enterprise2/shirshak/GLAUCOMA_DATASET_EYEPACS_AIROGS_ZENODO/preprocessed_cropped_separated_train_test_val
 # change root dir from data/eyepacs_airogs.yaml too
 # root_dir: /mnt/Enterprise2/shirshak/Glaucoma_Dataset_eyepacs_airogs_lightv2/eyepac-light-v2-512-jpg/
+root_dir: /mnt/Enterprise2/shirshak/ADAM_AgeRelatedMacularDegeneration/preprocessed_cropped_train_test_val_separated_ADAM/
 
 
 scheduler:
@@ -51,11 +54,6 @@ scheduler:
 #   _target_: sklearn.metrics.f1_score
 #   zero_division: 0.0
 #   average: micro
-
-
-
-
-
 
 
 
